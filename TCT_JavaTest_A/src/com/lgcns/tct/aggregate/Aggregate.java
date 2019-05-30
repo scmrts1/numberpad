@@ -36,12 +36,26 @@ public class Aggregate {
 		
 		////////////////////////여기부터 구현 (2) ---------------->
 		int arraySize = inputData.length;
-		int[] position = new int[] {0, 0};			
-		for(int k = 1 ; k < arraySize ; k++) {
-			
+		int aa = 0;
+		for(int i = 0 ; i < arraySize ; i++) {  //부분 집합의 크기 i * i
+			for ( int j = 0 ; j < arraySize - i; j++) { //가로 행렬
+				for(int k = 0 ; k < arraySize - i; k++) { //세로 행렬
+					int sum = 0;
+
+					for(int l = j; l < j + i + 1  ; l++) {
+						for(int m = k ; m < k + i + 1; m++) {
+							sum += inputData[l][m];
+						}
+						
+					}
+					if (maximumValue < sum) {
+						maximumValue = sum;
+					}
+					
+					
+				}
+			}
 		}
-		
-		
 		
 		///////////////////////////// <-------------- 여기까지 구현 (2)
 		return maximumValue;
