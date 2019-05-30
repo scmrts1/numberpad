@@ -1,1 +1,7 @@
 FROM > WHERE > GROUP BY > HAVING > SELECT > ORDER BY
+
+
+NTILE (4) over (order by SUM( 판매금액 )
+(해설) NTIL() 함수는 대상 값을 NTIL(4)에 명시된 값만큼 분할한 결과를 출력한다. 
+지정된 수를 버킷이라고 하고, 버킷 수 만큼 분할하여 표현된다. 
+위 예제에서는 NTIL(4)이므로 위 결과를 보면 전체 등급(버킷)을 4로 분할한걸로 알수 있다.
