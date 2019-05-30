@@ -3,9 +3,12 @@ package com.lgcns.tct.category;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class Category {
 	/**
@@ -15,116 +18,137 @@ public class Category {
      * @param		categories		List			입력데이터(inputCategories[0]: 카테고리1, inputCategories[1]: 카테고리2)
      * @return						String 			상위 카테고리
 	 */
+	
+	
+	private Item item = new Item();
+	
 	public String getTopCategory(String[][] inputData, List<String> categories) {
 		String topCategory = "";
 		////////////////////////여기부터 구현 (1) ---------------->
-		Map<String, List<String>> tMap = new LinkedHashMap<String, List<String>>();
 		
-		for(int i=0;i<inputData.length;i++){
-			String parent = inputData[i][0];
-			String child = inputData[i][1];
+		this.item.setId(inputData[0][0]);
+		for(String[] input : inputData) {
+			Item tmp = new Item();
+			tmp.setId(input[1]);
 			
-			if ( tMap.containsKey(parent) ) {
-				List<String> childs = tMap.get(parent);
-				childs.add(child);
-				
-				tMap.put(parent, childs);
-			} else {
-				List<String> childs = new ArrayList<String>();
-				childs.add(child);
-				
-				tMap.put(parent, childs);
-				
-			}
+			Item parent = this.item.findItem(input[0]);
+			tmp.setParent(parent);
+			parent.addChild(tmp);
+			tmp.depth();
+			
 		}
+		Set<Item> parents = new HashSet<Item>();
+		for(String i : categories) {
+			Item findItem = item.findItem(i);
+			List<Item> p = findItem.getParents();
+			parents.addAll(p);
+		}
+
 		
-		List<String> hierarchy = new ArrayList<String>();
-		
-		int index = -1;
-		
-		boolean bFirst = false;
-		
-		for(String inputCategory:categories){
-			if ( !bFirst ) {
-				for(String key:tMap.keySet()){
-					List<String> values = tMap.get(key);
-					if ( values.contains(inputCategory) ) {
-						hierarchy.add(key);
-						
-						String parent = getParent(tMap, key);
-						while(!parent.isEmpty()){
-							hierarchy.add(0, parent);
-							parent = getParent(tMap, parent);
-						}
-						
-						break;
-					}
-				}
-				bFirst = true;
+		for(String i : categories) {
+			Item findItem = item.findItem(i);
+			List<Item> p = findItem.getParents();
+			parents.retainAll(p);
+		}
+		Item max = null;
+		for(Item item : parents) {
+			if(max == null) {
+				max = item;
 			} else {
-				for(String key:tMap.keySet()){
-					List<String> values = tMap.get(key);
-					if ( values.contains(inputCategory) ) {
-						List<String> tHierarchy = new ArrayList<String>();
-						
-						tHierarchy.add(key);
-						
-						String parent = getParent(tMap, key);
-						while(!parent.isEmpty()){
-							tHierarchy.add(0, parent);
-							parent = getParent(tMap, parent);
-						}
-						
-						for(String tParent:tHierarchy){
-							for(int i=0;i<hierarchy.size();i++){
-								String oParent = hierarchy.get(i);
-								if ( oParent.equals(tParent) ) {
-									if ( index < i ) {
-										index = i;
-									}
-									break;
-								}
-							}
-						}
-						
-						break;
-					}
+				if(max.getDepth() < item.getDepth()) {
+					max = item;
 				}
 			}
-		}
-		
-		if ( index > -1 ) {
-			topCategory = hierarchy.get(index);
 		}
 		
 		///////////////////////////// <-------------- 여기까지 구현 (1)
-		return topCategory;
+		return max.getId();
 	}
 	
-	public String getParent(Map<String, List<String>> tMap, String child){
-		String parent = "";
+	private static class Item {
+		private String id;
+		private Item parent;
+		private List<Item> children = new ArrayList<Item>();
 		
-		for(String key:tMap.keySet()){
-			List<String> values = tMap.get(key);
-			if ( values.contains(child) ) {
-				parent = key;
-				break;
+		private int depth;
+		
+		public void depth() {
+			this.depth = this.parent.getDepth() + 1;
+		}
+		
+		public String toString() {
+//			String p = this.parent.getId() == null ? "" : this.parent.getId();
+			String ch = this.id;
+			return ch;
+		}
+		
+		public String getId() {
+			return id;
+		}
+		public void setId(String id) {
+			this.id = id;
+		}
+		public Item getParent() {
+			return parent;
+		}
+		public void setParent(Item parent) {
+			this.parent = parent;
+		}
+		public List<Item> getChildren() {
+			return children;
+		}
+		public void setChildren(List<Item> children) {
+			this.children = children;
+		}
+		
+		public void addChild(Item item) {
+			this.children.add(item);
+		}
+		
+		public Item findItem(String id) {
+			Item ret = null;
+			if(this.id.equals(id)) {
+				ret = this;
+			} else {
+				for(Item t : this.children) {
+					ret = t.findItem(id); 
+					if(ret != null) {
+						break;
+					}
+				}
 			}
+			return ret;
 		}
 		
-		return parent;
-	}
-	
-	public List<String> getChlids(Map<String, List<String>> tMap, String parent){
-		List<String> childs = new ArrayList<String>();
-		
-		if ( tMap.containsKey(parent) ) {
-			childs = tMap.get(parent);
+		public List<Item> getParents() {
+			List<Item> p = new ArrayList<Item>();
+			if(this.getParent() != null) {
+				p.add(this.getParent());
+				p.addAll(this.parent.getParents());
+			}
+					
+			return p;
+			
 		}
 		
-		return childs;
+		public List<Item> getChildrenAll() {
+			List<Item> ret = new LinkedList<Item>();
+			ret.addAll(this.children);
+			for(Item item : this.children) {
+				ret.addAll(item.getChildrenAll());
+			}
+			return ret;
+		}
+
+		public int getDepth() {
+			return depth;
+		}
+
+		public void setDepth(int depth) {
+			this.depth = depth;
+		}
+		
 	}
-	
 	
 	/**
 	 * 하위 카테고리의 개수를 계산하는 기능
@@ -136,55 +160,11 @@ public class Category {
 	public int getNumberOfSubcategories(String[][] inputData, String categoryStr) {
 		int numberOfSubcategories = 0;
 		////////////////////////여기부터 구현 (2) ---------------->
-		Map<String, List<String>> tMap = new LinkedHashMap<String, List<String>>();
-		
-		for(int i=0;i<inputData.length;i++){
-			String parent = inputData[i][0];
-			String child = inputData[i][1];
-			
-			if ( tMap.containsKey(parent) ) {
-				List<String> childs = tMap.get(parent);
-				childs.add(child);
-				
-				tMap.put(parent, childs);
-			} else {
-				List<String> childs = new ArrayList<String>();
-				childs.add(child);
-				
-				tMap.put(parent, childs);
-				
-			}
-		}
-		for(String key:tMap.keySet()){
-			List<String> values = tMap.get(key);
-			if ( values.contains(categoryStr) ) {
-				
-				String parent = getParent(tMap, categoryStr);
-				
-				List<String> children = new ArrayList<String>();
-				getChildren(tMap, parent, children);
-
-				numberOfSubcategories = children.size();
-				
-				break;
-			}
-		}
+		List<Item> childrenAll = this.item.findItem(categoryStr).getParent().getChildrenAll();
 		///////////////////////////// <-------------- 여기까지 구현 (2)
-		return numberOfSubcategories;
+		
+		return childrenAll.size();
 	}
 
-	private void getChildren(Map<String, List<String>> tMap, String parent, List<String> children) {
-		new ArrayList<String>();
-		
-		// 상위 카테고리..
-		List<String> tChildren = getChlids(tMap, parent);
-		if (tChildren.size() >  0 ) {
-			children.addAll(tChildren);
-			
-			for(String tChildParents:tChildren){
-				getChildren(tMap, tChildParents, children);
-			}
-		}
-	}
 	
 }
